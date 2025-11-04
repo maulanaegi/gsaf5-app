@@ -30,10 +30,12 @@ def load_and_clean_data(file):
         if col in df.columns:
             df[col] = df[col].astype(str).str.strip().str.lower()
 
-    # Hapus duplikat dan baris kosong
-    if 'Case_Number' in df.columns:
-        df = df.drop_duplicates(subset=['Case_Number'])
-    df = df.dropna(subset=['Year', 'Country'], how='any', errors='ignore')
+   # Hapus duplikat dan baris kosong
+if 'Case_Number' in df.columns:
+    df = df.drop_duplicates(subset=['Case_Number'])
+if {'Year', 'Country'}.issubset(df.columns):
+    df = df.dropna(subset=['Year', 'Country'], how='any')
+
 
     # Filter tahun masuk akal
     if 'Year' in df.columns:
@@ -132,4 +134,5 @@ else:
 # === Footer ===
 st.markdown("---")
 st.caption("Dibuat dengan ❤️ menggunakan Streamlit & Plotly | © 2025")
+
 
