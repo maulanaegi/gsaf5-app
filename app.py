@@ -5,13 +5,20 @@ import plotly.express as px
 # === Fungsi untuk memuat dan membersihkan data ===
 @st.cache_data
 def load_and_clean_data(file):
-    # Gunakan openpyxl agar mendukung file .xlsx
-    df = pd.read_excel(file, engine="openpyxl")
-    
+    # Tentukan engine sesuai format file
+    if file.name.endswith('.xls'):
+        try:
+            df = pd.read_excel(file, engine='xlrd')
+        except Exception as e:
+            st.error("Gagal membaca file .xls, silakan konversi ke .xlsx atau pastikan xlrd terinstal.")
+            st.stop()
+    else:  # .xlsx
+        df = pd.read_excel(file, engine='openpyxl')
+
     # Bersihkan nama kolom
-    df.columns = df.columns.str.strip().str.replace(' ', '_')
-    
-    # Pastikan kolom tersedia sebelum dipilih
+    df.columns = df.columns.str.strip().str.replace(' ', '_').str.replace(':', '_')
+
+    # Pilih kolom yang tersedia
     expected_cols = ['Case_Number', 'Date', 'Year', 'Type', 'Country', 'State', 'Location',
                      'Activity', 'Name', 'Sex', 'Age', 'Injury', 'Time', 'Species', 'Source']
     available_cols = [c for c in expected_cols if c in df.columns]
@@ -25,25 +32,22 @@ def load_and_clean_data(file):
     if 'Date' in df.columns:
         df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
 
-    # Standarisasi teks
+    # Bersihkan teks
     for col in ['Country', 'Activity', 'Species']:
         if col in df.columns:
             df[col] = df[col].astype(str).str.strip().str.lower()
 
-   # Hapus duplikat dan baris kosong
-if 'Case_Number' in df.columns:
-    df = df.drop_duplicates(subset=['Case_Number'])
-if {'Year', 'Country'}.issubset(df.columns):
-    df = df.dropna(subset=['Year', 'Country'], how='any')
+    # Hapus duplikat dan baris kosong
+    if 'Case_Number' in df.columns:
+        df = df.drop_duplicates(subset=['Case_Number'])
+    if {'Year', 'Country'}.issubset(df.columns):
+        df = df.dropna(subset=['Year', 'Country'], how='any')
 
-
-    # Filter tahun masuk akal
+    # Filter tahun valid
     if 'Year' in df.columns:
         df = df[df['Year'] >= 1900]
 
-    return df
-
-
+    return df  # ✅ return di dalam fungsi
 
 # === Judul aplikasi ===
 st.set_page_config(page_title="Visualisasi Serangan Hiu Global", layout="wide")
@@ -52,10 +56,10 @@ st.write("Unggah dataset GSAF Anda untuk menjelajahi tren serangan hiu di seluru
          "Sumber data: **Global Shark Attack File (Shark Research Institute)**.")
 
 # === Upload file Excel ===
-uploaded_file = st.sidebar.file_uploader("📤 Upload file GSAF Excel", type=["xls", "xlsx"])
+uploaded_file = st.sidebar.file_uploader("📤 Upload file Excel GSAF (.xls / .xlsx)", type=["xls", "xlsx"])
 
 if uploaded_file is None:
-    st.info("Silakan upload file `GSAF5.xls` atau file Excel dataset serangan hiu Anda untuk mulai.")
+    st.info("Silakan upload file Excel dataset serangan hiu Anda untuk mulai.")
     st.stop()
 
 # === Muat data ===
@@ -134,5 +138,3 @@ else:
 # === Footer ===
 st.markdown("---")
 st.caption("Dibuat dengan ❤️ menggunakan Streamlit & Plotly | © 2025")
-
-
