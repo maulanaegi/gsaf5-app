@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 
-DATA_URL = "https://raw.githubusercontent.com/<username>/<repo>/main/GSAF5.xls"
+DATA_URL = "https://github.com/maulanaegi/gsaf5-app/blob/main/app.py"
 
 @st.cache_data
 def load_and_clean_data(url):
@@ -99,5 +99,6 @@ else:
 # === Footer ===
 st.markdown("---")
 st.caption("Dibuat dengan ❤️ menggunakan Streamlit & Plotly | © 2025")
+
 
 
