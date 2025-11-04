@@ -5,24 +5,19 @@ import plotly.express as px
 # === Fungsi untuk memuat dan membersihkan data ===
 @st.cache_data
 def load_and_clean_data(file):
-    df = pd.read_excel(file)
+    # Gunakan openpyxl agar mendukung file .xlsx
+    df = pd.read_excel(file, engine="openpyxl")
+    
+    # Bersihkan nama kolom
+    df.columns = df.columns.str.strip().str.replace(' ', '_')
+    
+    # Pastikan kolom tersedia sebelum dipilih
+    expected_cols = ['Case_Number', 'Date', 'Year', 'Type', 'Country', 'State', 'Location',
+                     'Activity', 'Name', 'Sex', 'Age', 'Injury', 'Time', 'Species', 'Source']
+    available_cols = [c for c in expected_cols if c in df.columns]
+    df = df[available_cols]
 
-    # Bersihkan nama kolom dari spasi & karakter aneh
-    df.columns = df.columns.str.strip().str.replace(' ', '_').str.replace(':', '_')
-
-    # Deteksi kolom fatal otomatis (kadang bernama Unnamed:_11 atau Fatal_(Y/N))
-    fatal_col = [col for col in df.columns if 'fatal' in col.lower() or 'unnamed' in col.lower()]
-    if fatal_col:
-        df.rename(columns={fatal_col[0]: 'Fatal'}, inplace=True)
-
-    # Kolom yang digunakan (cek eksistensi agar tidak error)
-    columns_to_keep = [
-        'Case_Number', 'Date', 'Year', 'Type', 'Country', 'State', 'Location',
-        'Activity', 'Name', 'Sex', 'Age', 'Injury', 'Fatal', 'Time', 'Species', 'Source'
-    ]
-    df = df[[c for c in columns_to_keep if c in df.columns]]
-
-    # Konversi tipe data aman
+    # Konversi tipe data
     if 'Year' in df.columns:
         df['Year'] = pd.to_numeric(df['Year'], errors='coerce')
     if 'Age' in df.columns:
@@ -30,26 +25,22 @@ def load_and_clean_data(file):
     if 'Date' in df.columns:
         df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
 
-    # Normalisasi teks
+    # Standarisasi teks
     for col in ['Country', 'Activity', 'Species']:
         if col in df.columns:
             df[col] = df[col].astype(str).str.strip().str.lower()
 
-    # Standarisasi kolom Fatal
-    if 'Fatal' in df.columns:
-        df['Fatal'] = df['Fatal'].astype(str).str.upper().replace({'Y': 'Y', 'N': 'N', 'UNKNOWN': None})
-
-    # Bersihkan data duplikat & NaN
+    # Hapus duplikat dan baris kosong
     if 'Case_Number' in df.columns:
         df = df.drop_duplicates(subset=['Case_Number'])
-    if {'Year', 'Country'}.issubset(df.columns):
-        df = df.dropna(subset=['Year', 'Country'], how='any')
+    df = df.dropna(subset=['Year', 'Country'], how='any', errors='ignore')
 
-    # Filter tahun valid
+    # Filter tahun masuk akal
     if 'Year' in df.columns:
         df = df[df['Year'] >= 1900]
 
     return df
+
 
 
 # === Judul aplikasi ===
@@ -141,3 +132,4 @@ else:
 # === Footer ===
 st.markdown("---")
 st.caption("Dibuat dengan ❤️ menggunakan Streamlit & Plotly | © 2025")
+
