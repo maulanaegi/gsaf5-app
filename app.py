@@ -3,8 +3,8 @@ import pandas as pd
 import plotly.express as px
 
 # === URL dataset di GitHub ===
-DATA_URL = "DATA_URL = "https://raw.githubusercontent.com/maulanaegi/gsaf5-app/main/GSAF5.xlsx"
-"
+DATA_URL = DATA_URL = "https://raw.githubusercontent.com/maulanaegi/gsaf5-app/main/GSAF5.xlsx"
+
 # Ganti <username>, <repo>, dan nama file sesuai repo kamu
 
 # === Fungsi untuk muat & bersihkan data ===
@@ -132,6 +132,7 @@ else:
 
 st.markdown("---")
 st.caption("Dibuat dengan ❤️ menggunakan Streamlit & Plotly | © 2025")
+
 
 
 
