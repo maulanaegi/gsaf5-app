@@ -1,55 +1,20 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
 
-# === URL dataset di GitHub ===
-# Contoh: raw URL GitHub
-DATA_URL = "https://github.com/maulanaegi/gsaf5-app/blob/main/GSAF5.xlsx"
-# Ganti <username>, <repo>, dan nama file sesuai repo kamu
+DATA_URL = "https://raw.githubusercontent.com/<username>/<repo>/main/GSAF5.xls"
 
-# === Fungsi untuk memuat dan membersihkan data ===
 @st.cache_data
 def load_and_clean_data(url):
     try:
-        # Baca file Excel langsung dari GitHub
-        df = pd.read_excel(url, engine='openpyxl')
+        # Untuk file .xls gunakan engine 'xlrd'
+        if url.endswith('.xls'):
+            df = pd.read_excel(url, engine='xlrd')
+        else:
+            df = pd.read_excel(url, engine='openpyxl')
     except Exception as e:
         st.error(f"Gagal membaca dataset: {e}")
         st.stop()
-
-    # Bersihkan nama kolom
-    df.columns = df.columns.str.strip().str.replace(' ', '_').str.replace(':', '_')
-
-    # Pilih kolom yang tersedia
-    expected_cols = [
-        'Case_Number', 'Date', 'Year', 'Type', 'Country', 'State', 'Location',
-        'Activity', 'Name', 'Sex', 'Age', 'Injury', 'Time', 'Species', 'Source'
-    ]
-    available_cols = [c for c in expected_cols if c in df.columns]
-    df = df[available_cols]
-
-    # Konversi tipe data
-    if 'Year' in df.columns:
-        df['Year'] = pd.to_numeric(df['Year'], errors='coerce')
-    if 'Age' in df.columns:
-        df['Age'] = pd.to_numeric(df['Age'], errors='coerce')
-    if 'Date' in df.columns:
-        df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
-
-    # Bersihkan teks
-    for col in ['Country', 'Activity', 'Species']:
-        if col in df.columns:
-            df[col] = df[col].astype(str).str.strip().str.lower()
-
-    # Hapus duplikat dan baris kosong
-    if 'Case_Number' in df.columns:
-        df = df.drop_duplicates(subset=['Case_Number'])
-    if {'Year', 'Country'}.issubset(df.columns):
-        df = df.dropna(subset=['Year', 'Country'], how='any')
-
-    # Filter tahun valid
-    if 'Year' in df.columns:
-        df = df[df['Year'] >= 1900]
+    return df
 
     return df
 
@@ -134,4 +99,5 @@ else:
 # === Footer ===
 st.markdown("---")
 st.caption("Dibuat dengan ❤️ menggunakan Streamlit & Plotly | © 2025")
+
 
