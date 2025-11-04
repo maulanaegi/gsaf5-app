@@ -2,18 +2,20 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
+# === URL dataset di GitHub ===
+# Contoh: raw URL GitHub
+DATA_URL = "https://raw.githubusercontent.com/<username>/<repo>/main/GSAF5.xlsx"
+# Ganti <username>, <repo>, dan nama file sesuai repo kamu
+
 # === Fungsi untuk memuat dan membersihkan data ===
 @st.cache_data
-def load_and_clean_data(file):
-    # Pilih engine sesuai format file
-    if file.name.endswith('.xls'):
-        try:
-            df = pd.read_excel(file, engine='xlrd')
-        except Exception as e:
-            st.error("Gagal membaca file .xls, silakan konversi ke .xlsx atau pastikan xlrd terinstal.")
-            st.stop()
-    else:  # .xlsx
-        df = pd.read_excel(file, engine='openpyxl')
+def load_and_clean_data(url):
+    try:
+        # Baca file Excel langsung dari GitHub
+        df = pd.read_excel(url, engine='openpyxl')
+    except Exception as e:
+        st.error(f"Gagal membaca dataset: {e}")
+        st.stop()
 
     # Bersihkan nama kolom
     df.columns = df.columns.str.strip().str.replace(' ', '_').str.replace(':', '_')
@@ -49,26 +51,15 @@ def load_and_clean_data(file):
     if 'Year' in df.columns:
         df = df[df['Year'] >= 1900]
 
-    return df  # ✅ return di dalam fungsi, indentasi benar
+    return df
 
 # === Judul aplikasi ===
 st.set_page_config(page_title="Visualisasi Serangan Hiu Global", layout="wide")
 st.title("🦈 Visualisasi Interaktif Dataset Serangan Hiu Global (GSAF)")
-st.write("Unggah dataset GSAF Anda untuk menjelajahi tren serangan hiu di seluruh dunia. "
-         "Sumber data: **Global Shark Attack File (Shark Research Institute)**.")
+st.write("Dataset diambil langsung dari GitHub. Filter dan visualisasi tersedia secara interaktif.")
 
-# === Upload file Excel ===
-uploaded_file = st.sidebar.file_uploader(
-    "📤 Upload file Excel GSAF (.xls / .xlsx)",
-    type=["xls", "xlsx"]
-)
-
-if uploaded_file is None:
-    st.info("Silakan upload file Excel dataset serangan hiu Anda untuk mulai.")
-    st.stop()
-
-# === Muat data ===
-df = load_and_clean_data(uploaded_file)
+# === Muat data dari GitHub ===
+df = load_and_clean_data(DATA_URL)
 
 # === Sidebar Filter ===
 st.sidebar.header("🔍 Filter Data")
