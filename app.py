@@ -1,20 +1,59 @@
 import streamlit as st
 import pandas as pd
+import plotly.express as px
 
-DATA_URL = "https://github.com/maulanaegi/gsaf5-app/blob/main/app.py"
+# === URL dataset di GitHub ===
+DATA_URL = "DATA_URL = "https://raw.githubusercontent.com/maulanaegi/gsaf5-app/main/GSAF5.xlsx"
+"
+# Ganti <username>, <repo>, dan nama file sesuai repo kamu
 
+# === Fungsi untuk muat & bersihkan data ===
 @st.cache_data
 def load_and_clean_data(url):
     try:
-        # Untuk file .xls gunakan engine 'xlrd'
+        # Pilih engine otomatis berdasarkan ekstensi file
         if url.endswith('.xls'):
             df = pd.read_excel(url, engine='xlrd')
-        else:
+        elif url.endswith('.xlsx'):
             df = pd.read_excel(url, engine='openpyxl')
+        else:
+            raise ValueError("File harus berekstensi .xls atau .xlsx")
     except Exception as e:
         st.error(f"Gagal membaca dataset: {e}")
         st.stop()
-    return df
+
+    # Bersihkan nama kolom
+    df.columns = df.columns.str.strip().str.replace(' ', '_').str.replace(':', '_')
+
+    # Pilih kolom yang tersedia
+    expected_cols = [
+        'Case_Number', 'Date', 'Year', 'Type', 'Country', 'State', 'Location',
+        'Activity', 'Name', 'Sex', 'Age', 'Injury', 'Time', 'Species', 'Source'
+    ]
+    available_cols = [c for c in expected_cols if c in df.columns]
+    df = df[available_cols]
+
+    # Konversi tipe data
+    for col in ['Year', 'Age']:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+    if 'Date' in df.columns:
+        df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+
+    # Bersihkan teks
+    for col in ['Country', 'Activity', 'Species']:
+        if col in df.columns:
+            df[col] = df[col].astype(str).str.strip().str.lower()
+
+    # Hapus duplikat dan baris kosong
+    if 'Case_Number' in df.columns:
+        df = df.drop_duplicates(subset=['Case_Number'])
+    if {'Year', 'Country'}.issubset(df.columns):
+        df = df.dropna(subset=['Year', 'Country'], how='any')
+
+    # Filter tahun valid
+    if 'Year' in df.columns:
+        df = df[df['Year'] >= 1900]
 
     return df
 
@@ -56,14 +95,12 @@ if selected_activities:
 
 # === Visualisasi ===
 if not filtered_df.empty:
-    # 1️⃣ Tren Serangan per Tahun
     if 'Year' in filtered_df.columns:
         st.subheader("📈 Tren Serangan Hiu per Tahun")
         yearly_counts = filtered_df.groupby('Year').size().reset_index(name='Jumlah')
         line_fig = px.line(yearly_counts, x='Year', y='Jumlah', title='Tren Tahunan Serangan Hiu')
         st.plotly_chart(line_fig, use_container_width=True)
 
-    # 2️⃣ Peta Interaktif
     if 'Country' in filtered_df.columns:
         st.subheader("🌍 Distribusi Geografis Serangan Hiu")
         country_counts = filtered_df.groupby('Country').size().reset_index(name='Jumlah')
@@ -77,28 +114,21 @@ if not filtered_df.empty:
         )
         st.plotly_chart(map_fig, use_container_width=True)
 
-    # 3️⃣ Aktivitas Saat Serangan
     if 'Activity' in filtered_df.columns:
         st.subheader("🏄 Aktivitas Umum Saat Serangan")
         activity_counts = filtered_df['Activity'].value_counts().reset_index(name='Jumlah').head(10)
         bar_fig = px.bar(activity_counts, x='Activity', y='Jumlah', title='Top 10 Aktivitas Saat Serangan')
         st.plotly_chart(bar_fig, use_container_width=True)
 
-    # 4️⃣ Distribusi Usia
     if 'Age' in filtered_df.columns:
         st.subheader("👥 Distribusi Usia Korban")
         hist_fig = px.histogram(filtered_df, x='Age', nbins=20, title='Histogram Usia Korban')
         st.plotly_chart(hist_fig, use_container_width=True)
 
-    # 5️⃣ Sampel Data
     st.subheader("📋 Sampel Data")
     st.dataframe(filtered_df.head(10))
 else:
     st.warning("Tidak ada data yang cocok dengan filter yang dipilih.")
 
-# === Footer ===
 st.markdown("---")
 st.caption("Dibuat dengan ❤️ menggunakan Streamlit & Plotly | © 2025")
-
-
-
