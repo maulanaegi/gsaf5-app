@@ -4,7 +4,7 @@ import plotly.express as px
 
 # === URL dataset di GitHub ===
 # Contoh: raw URL GitHub
-DATA_URL = "https://raw.githubusercontent.com/<username>/<repo>/main/GSAF5.xlsx"
+DATA_URL = "https://github.com/maulanaegi/gsaf5-app/blob/main/GSAF5.xlsx"
 # Ganti <username>, <repo>, dan nama file sesuai repo kamu
 
 # === Fungsi untuk memuat dan membersihkan data ===
@@ -134,3 +134,4 @@ else:
 # === Footer ===
 st.markdown("---")
 st.caption("Dibuat dengan ❤️ menggunakan Streamlit & Plotly | © 2025")
+
